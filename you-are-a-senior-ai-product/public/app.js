@@ -535,11 +535,25 @@ async function startBrowserVoiceSession() {
     demoRecognition.lang = "en-US";
     demoRecognition.interimResults = false;
     demoRecognition.continuous = state.autoListening;
-    demoRecognition.onresult = (event) => {
-      const text = event.results[event.results.length - 1][0].transcript;
-      addMessage("user", text);
-      coachReply(text);
-    };
+    demoRecognition.onresult = async (event) => {
+  const text = event.results[event.results.length - 1][0].transcript?.trim();
+
+  if (!text || text.length < 2) return;
+
+  demoRecognition.stop();
+
+  addMessage("user", text);
+
+  setStatus("Thinking...", true);
+
+  await coachReply(text);
+
+  setTimeout(() => {
+    if (state.sessionActive && state.autoListening) {
+      demoRecognition.start();
+    }
+  }, 600);
+};
     demoRecognition.onerror = () => {
       if (state.sessionActive) {
         setStatus(navigator.onLine ? "Voice paused" : "Offline", false);
